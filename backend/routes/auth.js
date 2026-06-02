@@ -22,13 +22,20 @@ router.post("/signup", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    await pool.query(
-      "INSERT INTO users(name,email,password) VALUES($1,$2,$3)",
+    const insertResult = await pool.query(
+      "INSERT INTO users(name,email,password) VALUES($1,$2,$3) RETURNING id",
       [name, email, hashedPassword]
     );
 
+    req.session.user = {
+      id: insertResult.rows[0].id,
+      name,
+      email,
+    };
+
     res.status(201).json({
-      message: "Signup Successful"
+      message: "Signup Successful",
+      user: req.session.user,
     });
 
   } catch (error) {
@@ -67,13 +74,15 @@ router.post("/login", async (req, res) => {
       });
     }
 
+    req.session.user = {
+      id: user.rows[0].id,
+      name: user.rows[0].name,
+      email: user.rows[0].email,
+    };
+
     res.status(200).json({
       message: "Login Successful",
-      user: {
-        id: user.rows[0].id,
-        name: user.rows[0].name,
-        email: user.rows[0].email
-      }
+      user: req.session.user,
     });
 
   } catch (error) {
@@ -83,6 +92,23 @@ router.post("/login", async (req, res) => {
       message: "Server Error"
     });
   }
+});
+
+router.get("/me", (req, res) => {
+  if (req.session.user) {
+    return res.status(200).json({ user: req.session.user });
+  }
+  res.status(401).json({ message: "Not authenticated" });
+});
+
+router.post("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    if (err) {
+      return res.status(500).json({ message: "Unable to logout" });
+    }
+    res.clearCookie("connect.sid");
+    res.status(200).json({ message: "Logout successful" });
+  });
 });
 
 module.exports = router;
