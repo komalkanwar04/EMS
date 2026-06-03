@@ -29,32 +29,28 @@ function Signup({ onSignup }) {
   };
 
   return (
-    <div style={{ border: "1px solid #ddd", padding: 16, margin: 8 }}>
+    <div className="auth-card">
       <h2>Signup</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
+      <p style={{ color: "var(--muted)", marginTop: 6 }}>Create an account to start managing employee profiles.</p>
+      <form onSubmit={handleSubmit} style={{ display: "grid", gap: 16, marginTop: 20 }}>
+        <div className="field-group">
           <label>Name</label>
-          <br />
-          <input name="name" value={form.name} onChange={handleChange} />
+          <input className="input-field" name="name" value={form.name} onChange={handleChange} required />
         </div>
-        <div>
+        <div className="field-group">
           <label>Email</label>
-          <br />
-          <input name="email" value={form.email} onChange={handleChange} />
+          <input className="input-field" name="email" value={form.email} onChange={handleChange} required />
         </div>
-        <div>
+        <div className="field-group">
           <label>Password</label>
-          <br />
-          <input name="password" type="password" value={form.password} onChange={handleChange} />
+          <input className="input-field" name="password" type="password" value={form.password} onChange={handleChange} required />
         </div>
-        <div style={{ marginTop: 8 }}>
-          <button type="submit">Sign up</button>
-        </div>
+        <button className="btn" type="submit">Sign up</button>
       </form>
 
-      {status && status === "loading" && <div>Signing up…</div>}
-      {status && status.ok === true && <div style={{ color: "green" }}>{status.message}</div>}
-      {status && status.ok === false && <div style={{ color: "red" }}>{status.message}</div>}
+      {status && status === "loading" && <div className="status-message" style={{ marginTop: 16 }}>Signing up…</div>}
+      {status && status.ok === true && <div className="status-message success" style={{ marginTop: 16 }}>{status.message}</div>}
+      {status && status.ok === false && <div className="status-message error" style={{ marginTop: 16 }}>{status.message}</div>}
     </div>
   );
 }

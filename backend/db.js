@@ -5,11 +5,9 @@ const pool = new Pool({
   host: process.env.DB_HOST,
   database: process.env.DB_DATABASE,
   password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
+  port: Number(process.env.DB_PORT) || 5432,
 });
 
-pool.connect()
-  .then(() => console.log("PostgreSQL Connected"))
-  .catch(err => console.log(err));
-
+// Do not attempt an eager connect here — keep the pool lazy so the server
+// can start even if the database credentials are misconfigured during dev.
 module.exports = pool;

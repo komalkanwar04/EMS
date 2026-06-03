@@ -33,6 +33,8 @@ router.post("/signup", async (req, res) => {
       email,
     };
 
+    console.log("[auth] signup session set:", req.session.user);
+
     res.status(201).json({
       message: "Signup Successful",
       user: req.session.user,
@@ -79,6 +81,8 @@ router.post("/login", async (req, res) => {
       name: user.rows[0].name,
       email: user.rows[0].email,
     };
+
+    console.log("[auth] login session set:", req.session.user);
 
     res.status(200).json({
       message: "Login Successful",

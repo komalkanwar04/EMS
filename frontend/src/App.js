@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Signup from "./Signup";
 import Login from "./Login";
+import EmployeeDashboard from "./EmployeeDashboard";
+import Navbar from "./components/Navbar";
 
 const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
@@ -9,6 +11,11 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark-theme", isDarkMode);
+  }, [isDarkMode]);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -38,27 +45,23 @@ export default function App() {
   };
 
   if (loading) {
-    return <div>Loading authentication state…</div>;
+    return <div className="page-card" style={{ margin: 24 }}>Loading authentication state…</div>;
   }
 
   return (
-    <div style={{ padding: 16 }}>
-      <h1>Login / Signup App</h1>
+    <main>
+      <Navbar user={user} isDark={isDarkMode} onToggleDark={() => setIsDarkMode((c) => !c)} />
 
-      {message && <div style={{ marginBottom: 16, color: "green" }}>{message}</div>}
+      {message && <div className="status-message success">{message}</div>}
 
       {user ? (
-        <div style={{ border: "1px solid #ddd", padding: 16, margin: 8 }}>
-          <h2>Welcome back, {user.name || user.email}</h2>
-          <p>Email: {user.email}</p>
-          <button onClick={handleLogout}>Logout</button>
-        </div>
+        <EmployeeDashboard user={user} onLogout={handleLogout} />
       ) : (
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+        <div className="grid-two" style={{ gap: 20 }}>
           <Signup onSignup={setUser} />
           <Login onLogin={setUser} />
         </div>
       )}
-    </div>
+    </main>
   );
 }
