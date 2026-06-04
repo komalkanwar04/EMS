@@ -8,17 +8,19 @@ export default function Navbar({ user, isDark, onToggleDark }) {
         <div className="logo">
           <div className="logo-mark" />
           <div>
-            <div className="logo-text">Komal HR</div>
+            <div className="logo-text">PeopleSync EMS</div>
             <div className="logo-subtitle">Modern employee HQ</div>
           </div>
         </div>
       </div>
 
       <div className="nav-center">
-        <div className="search-wrap">
-          <FiSearch />
-          <input aria-label="Search" placeholder="Search employees, departments, skills..." />
-        </div>
+        {user && (
+          <div className="search-wrap">
+            <FiSearch />
+            <input aria-label="Search" placeholder="Search employees, departments, skills..." />
+          </div>
+        )}
       </div>
 
       <div className="nav-right">

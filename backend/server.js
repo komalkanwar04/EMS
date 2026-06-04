@@ -2,16 +2,43 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
-const session = require("express-session");
-const pgSession = require("connect-pg-simple");
+const cookieParser = require("cookie-parser");
 const path = require("path");
-const pool = require("./db");
+const helmet = require("helmet");
+const swaggerJsdoc = require("swagger-jsdoc");
+const swaggerUi = require("swagger-ui-express");
 
 const authRoutes = require("./routes/auth");
 const employeeRoutes = require("./routes/employee");
+const leaveRoutes = require("./routes/leave");
+const recruitmentRoutes = require("./routes/recruitment");
 
 const app = express();
-const PgSession = pgSession(session);
+
+// 1. Swagger OpenAPI definition
+const swaggerOptions = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "PeopleSync EMS API Specification",
+      version: "1.2.0",
+      description: "Secure RESTful endpoints for PeopleSync Employee Management System (EMS) including leave flows and talent intake.",
+    },
+    servers: [
+      {
+        url: "http://localhost:5001",
+        description: "Development Server",
+      },
+    ],
+  },
+  apis: [path.join(__dirname, "routes/*.js")],
+};
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+// 2. Security Middlewares
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP to allow swagger-ui CSS/JS inline assets
+}));
 
 const corsOptions = {
   origin:
@@ -21,37 +48,15 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(express.json());
+app.use(cookieParser());
 
-// simple request logger for debugging
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.originalUrl}`);
-  next();
-});
-
-app.use(
-  session({
-    store: new PgSession({
-      pool,
-      tableName: "session",
-      createTableIfMissing: true,
-    }),
-    secret: process.env.SESSION_SECRET || "supersecretkey",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        // In development we keep secure false. For cross-site requests modern browsers
-        // may require SameSite=None with Secure in production behind HTTPS.
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
-        sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 1000 * 60 * 60 * 24,
-    },
-  })
-);
-
+// 3. Mount Routes
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);
 app.use("/api/employees", employeeRoutes);
+app.use("/api/leaves", leaveRoutes);
+app.use("/api/recruitment", recruitmentRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
