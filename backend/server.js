@@ -12,6 +12,8 @@ const authRoutes = require("./routes/auth");
 const employeeRoutes = require("./routes/employee");
 const leaveRoutes = require("./routes/leave");
 const recruitmentRoutes = require("./routes/recruitment");
+const assetRoutes = require("./routes/asset");
+const reportRoutes = require("./routes/report");
 
 const app = express();
 
@@ -57,6 +59,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/employees", employeeRoutes);
 app.use("/api/leaves", leaveRoutes);
 app.use("/api/recruitment", recruitmentRoutes);
+app.use("/api/assets", assetRoutes);
+app.use("/api/reports", reportRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

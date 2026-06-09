@@ -1,5 +1,5 @@
 import React from "react";
-import { FiHome, FiUsers, FiLayers, FiCheckSquare, FiCalendar, FiChevronLeft, FiBriefcase } from "react-icons/fi";
+import { FiHome, FiUsers, FiLayers, FiCheckSquare, FiCalendar, FiChevronLeft, FiBriefcase, FiHardDrive, FiFileText } from "react-icons/fi";
 
 export default function Sidebar({
   active = "dashboard",
@@ -14,10 +14,15 @@ export default function Sidebar({
     { key: "departments", label: "Departments", icon: <FiLayers /> },
     { key: "skills", label: "Skills Master", icon: <FiCheckSquare /> },
     { key: "leaves", label: "Leave System", icon: <FiCalendar /> },
+    { key: "assets", label: "Assets", icon: <FiHardDrive /> },
   ];
 
   if (user && (user.role === "admin" || user.role === "hr")) {
     items.push({ key: "recruitment", label: "Recruitment", icon: <FiBriefcase /> });
+  }
+
+  if (user && (user.role === "admin" || user.role === "hr" || user.role === "manager")) {
+    items.push({ key: "reports", label: "Reports", icon: <FiFileText /> });
   }
 
   return (

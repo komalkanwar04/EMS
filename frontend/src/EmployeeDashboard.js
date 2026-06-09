@@ -9,6 +9,8 @@ import DepartmentMaster from "./components/DepartmentMaster";
 import SkillsMaster from "./components/SkillsMaster";
 import LeaveManagement from "./components/LeaveManagement";
 import RecruitmentManagement from "./components/RecruitmentManagement";
+import AssetManagement from "./components/AssetManagement";
+import ReportingManagement from "./components/ReportingManagement";
 
 export default function EmployeeDashboard({ user, onLogout }) {
   const [view, setView] = useState("dashboard"); // dashboard, employees, departments, skills, create-employee, edit-employee
@@ -171,6 +173,18 @@ export default function EmployeeDashboard({ user, onLogout }) {
         {view === "recruitment" && (
           <div className="panel-card visible">
             <RecruitmentManagement user={user} />
+          </div>
+        )}
+
+        {view === "assets" && (
+          <div className="panel-card visible">
+            <AssetManagement user={user} />
+          </div>
+        )}
+
+        {view === "reports" && (
+          <div className="panel-card visible">
+            <ReportingManagement user={user} />
           </div>
         )}
       </div>

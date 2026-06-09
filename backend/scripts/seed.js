@@ -77,6 +77,43 @@ async function runSeed() {
       );
     `);
 
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS assets (
+        id SERIAL PRIMARY KEY,
+        asset_code VARCHAR(50) UNIQUE NOT NULL,
+        asset_name VARCHAR(200) NOT NULL,
+        asset_type VARCHAR(100) NOT NULL,
+        purchase_date DATE,
+        purchase_cost NUMERIC(12,2),
+        status VARCHAR(50) DEFAULT 'Available',
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS asset_allocations (
+        id SERIAL PRIMARY KEY,
+        asset_id INT REFERENCES assets(id) ON DELETE CASCADE,
+        employee_id INT REFERENCES employee_profiles(id) ON DELETE CASCADE,
+        allocated_by INT REFERENCES users(id) ON DELETE SET NULL,
+        allocated_date DATE NOT NULL DEFAULT CURRENT_DATE,
+        return_date DATE,
+        status VARCHAR(50) DEFAULT 'Active',
+        remarks TEXT
+      );
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS asset_history (
+        id SERIAL PRIMARY KEY,
+        asset_id INT REFERENCES assets(id) ON DELETE CASCADE,
+        action VARCHAR(100) NOT NULL,
+        remarks TEXT,
+        created_by INT REFERENCES users(id) ON DELETE SET NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
     // 2. Clear all tables to insert fresh dataset in sequence
     console.log("Truncating existing tables...");
     await client.query(`
@@ -91,7 +128,10 @@ async function runSeed() {
         leave_balances, 
         leave_applications, 
         approval_history,
-        recruitment_applications
+        recruitment_applications,
+        assets,
+        asset_allocations,
+        asset_history
       RESTART IDENTITY CASCADE
     `);
 
@@ -389,6 +429,115 @@ async function runSeed() {
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
         [r.name, r.email, r.phone, r.type, r.deptId, r.designation, r.resume, r.status]
       );
+    }
+
+    // 14. Seed Assets & Asset Allocations/History
+    console.log("Seeding assets...");
+    const assetsSeed = [
+      { code: "LAP-001", name: "MacBook Pro M3 Max", type: "Laptop", purchase_date: "2025-01-15", cost: 2499.00, status: "Allocated" },
+      { code: "LAP-002", name: "Dell XPS 15", type: "Laptop", purchase_date: "2025-03-10", cost: 1899.00, status: "Available" },
+      { code: "MOU-001", name: "Logitech MX Master 3S", type: "Mouse", purchase_date: "2025-01-20", cost: 99.00, status: "Allocated" },
+      { code: "MON-001", name: "LG UltraFine 27\" 4K", type: "Monitor", purchase_date: "2024-11-05", cost: 499.00, status: "Available" },
+      { code: "IDC-001", name: "Employee ID Card", type: "ID Card", purchase_date: "2026-06-01", cost: 15.00, status: "Available" },
+      { code: "ACC-001", name: "High-Security Access Badge", type: "Access Card", purchase_date: "2026-06-01", cost: 25.00, status: "Allocated" },
+      { code: "LIC-001", name: "Adobe Creative Cloud Annual", type: "Software Licenses", purchase_date: "2026-01-10", cost: 599.00, status: "Allocated" }
+    ];
+
+    const insertedAssets = [];
+    for (const asset of assetsSeed) {
+      const res = await client.query(
+        `INSERT INTO assets (asset_code, asset_name, asset_type, purchase_date, purchase_cost, status)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [asset.code, asset.name, asset.type, asset.purchase_date, asset.cost, asset.status]
+      );
+      insertedAssets.push({ id: res.rows[0].id, ...asset });
+    }
+
+    // Seed allocations for some of them
+    console.log("Seeding asset allocations & history...");
+    
+    // Allocate LAP-001 to Vikas Mehta (employee_profiles id = 8, matching userId = 8)
+    // allocated_by = 1 (Pranay Gupta, admin user)
+    const laptopId = insertedAssets.find(a => a.code === "LAP-001").id;
+    await client.query(
+      `INSERT INTO asset_allocations (asset_id, employee_id, allocated_by, allocated_date, status, remarks)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [laptopId, 8, 1, "2026-06-02", "Active", "Assigned for remote development role"]
+    );
+    await client.query(
+      `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+       VALUES ($1, $2, $3, $4)`,
+      [laptopId, "Created", "Asset added to inventory during seeding", 1]
+    );
+    await client.query(
+      `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+       VALUES ($1, $2, $3, $4)`,
+      [laptopId, "Allocated", "Allocated to Vikas Mehta", 1]
+    );
+
+    // Allocate MOU-001 to Vikas Mehta
+    const mouseId = insertedAssets.find(a => a.code === "MOU-001").id;
+    await client.query(
+      `INSERT INTO asset_allocations (asset_id, employee_id, allocated_by, allocated_date, status, remarks)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [mouseId, 8, 1, "2026-06-02", "Active", "Logitech Mouse assigned"]
+    );
+    await client.query(
+      `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+       VALUES ($1, $2, $3, $4)`,
+      [mouseId, "Created", "Asset added to inventory during seeding", 1]
+    );
+    await client.query(
+      `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+       VALUES ($1, $2, $3, $4)`,
+      [mouseId, "Allocated", "Allocated to Vikas Mehta", 1]
+    );
+
+    // Allocate ACC-001 to Amit Patel (employee_id = 4)
+    const cardId = insertedAssets.find(a => a.code === "ACC-001").id;
+    await client.query(
+      `INSERT INTO asset_allocations (asset_id, employee_id, allocated_by, allocated_date, status, remarks)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [cardId, 4, 1, "2026-06-05", "Active", "Office access card"]
+    );
+    await client.query(
+      `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+       VALUES ($1, $2, $3, $4)`,
+      [cardId, "Created", "Asset added to inventory during seeding", 1]
+    );
+    await client.query(
+      `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+       VALUES ($1, $2, $3, $4)`,
+      [cardId, "Allocated", "Allocated to Amit Patel", 1]
+    );
+
+    // Allocate LIC-001 to Amit Patel
+    const licenseId = insertedAssets.find(a => a.code === "LIC-001").id;
+    await client.query(
+      `INSERT INTO asset_allocations (asset_id, employee_id, allocated_by, allocated_date, status, remarks)
+       VALUES ($1, $2, $3, $4, $5, $6)`,
+      [licenseId, 4, 1, "2026-06-06", "Active", "Creative cloud license"]
+    );
+    await client.query(
+      `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+       VALUES ($1, $2, $3, $4)`,
+      [licenseId, "Created", "Asset added to inventory during seeding", 1]
+    );
+    await client.query(
+      `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+       VALUES ($1, $2, $3, $4)`,
+      [licenseId, "Allocated", "Allocated to Amit Patel", 1]
+    );
+
+    // Add history for other non-allocated assets
+    for (const a of insertedAssets) {
+      if (a.status === "Available") {
+        await client.query(
+          `INSERT INTO asset_history (asset_id, action, remarks, created_by)
+           VALUES ($1, $2, $3, $4)`,
+          [a.id, "Created", "Asset added to inventory during seeding", 1]
+        );
+      }
     }
 
     await client.query("COMMIT");

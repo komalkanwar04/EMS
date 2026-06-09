@@ -108,3 +108,34 @@ CREATE TABLE IF NOT EXISTS recruitment_applications (
   status VARCHAR(50) DEFAULT 'Pending Review', -- 'Pending Review', 'Shortlisted', 'Rejected', 'Hired'
   applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS assets (
+  id SERIAL PRIMARY KEY,
+  asset_code VARCHAR(50) UNIQUE NOT NULL,
+  asset_name VARCHAR(200) NOT NULL,
+  asset_type VARCHAR(100) NOT NULL,
+  purchase_date DATE,
+  purchase_cost NUMERIC(12,2),
+  status VARCHAR(50) DEFAULT 'Available',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS asset_allocations (
+  id SERIAL PRIMARY KEY,
+  asset_id INT REFERENCES assets(id) ON DELETE CASCADE,
+  employee_id INT REFERENCES employee_profiles(id) ON DELETE CASCADE,
+  allocated_by INT REFERENCES users(id) ON DELETE SET NULL,
+  allocated_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  return_date DATE,
+  status VARCHAR(50) DEFAULT 'Active',
+  remarks TEXT
+);
+
+CREATE TABLE IF NOT EXISTS asset_history (
+  id SERIAL PRIMARY KEY,
+  asset_id INT REFERENCES assets(id) ON DELETE CASCADE,
+  action VARCHAR(100) NOT NULL,
+  remarks TEXT,
+  created_by INT REFERENCES users(id) ON DELETE SET NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
