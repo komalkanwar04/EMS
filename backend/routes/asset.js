@@ -20,6 +20,26 @@ const requireAuth = (req, res, next) => {
   }
 };
 
+// Check for Admin or Manager role (case-insensitive)
+const requireAdminOrManager = (req, res, next) => {
+  const role = (req.user?.role || "").toLowerCase();
+  if (role === "admin" || role === "manager") {
+    return next();
+  }
+  return res.status(403).json({ message: "Access denied. Action restricted to Admins and Managers only." });
+};
+
+// Reject HR from accessing any asset endpoints
+const requireNonHR = (req, res, next) => {
+  if ((req.user?.role || "").toLowerCase() === "hr") {
+    return res.status(403).json({ message: "Access denied. Asset module is disabled for HR role." });
+  }
+  next();
+};
+
+router.use(requireAuth);
+router.use(requireNonHR);
+
 // -------------------------------------------------------------
 // GET /api/assets - List assets with filters
 // -------------------------------------------------------------
@@ -76,7 +96,7 @@ router.get("/", requireAuth, async (req, res) => {
 // -------------------------------------------------------------
 // POST /api/assets - Create new asset
 // -------------------------------------------------------------
-router.post("/", requireAuth, async (req, res) => {
+router.post("/", requireAuth, requireAdminOrManager, async (req, res) => {
   const { asset_code, asset_name, asset_type, purchase_date, purchase_cost } = req.body;
 
   if (!asset_code || !asset_code.trim()) {
@@ -135,7 +155,7 @@ router.post("/", requireAuth, async (req, res) => {
 // -------------------------------------------------------------
 // PUT /api/assets/:id - Update asset
 // -------------------------------------------------------------
-router.put("/:id", requireAuth, async (req, res) => {
+router.put("/:id", requireAuth, requireAdminOrManager, async (req, res) => {
   const { id } = req.params;
   const { asset_code, asset_name, asset_type, purchase_date, purchase_cost, status } = req.body;
 
@@ -235,7 +255,7 @@ router.put("/:id", requireAuth, async (req, res) => {
 // -------------------------------------------------------------
 // DELETE /api/assets/:id - Delete asset
 // -------------------------------------------------------------
-router.delete("/:id", requireAuth, async (req, res) => {
+router.delete("/:id", requireAuth, requireAdminOrManager, async (req, res) => {
   const { id } = req.params;
   try {
     const result = await pool.query("DELETE FROM assets WHERE id = $1 RETURNING *", [id]);
@@ -252,7 +272,7 @@ router.delete("/:id", requireAuth, async (req, res) => {
 // -------------------------------------------------------------
 // POST /api/assets/:id/allocate - Allocate an asset to employee
 // -------------------------------------------------------------
-router.post("/:id/allocate", requireAuth, async (req, res) => {
+router.post("/:id/allocate", requireAuth, requireAdminOrManager, async (req, res) => {
   const { id } = req.params;
   const { employee_id, allocated_date, remarks } = req.body;
 
@@ -328,7 +348,7 @@ router.post("/:id/allocate", requireAuth, async (req, res) => {
 // -------------------------------------------------------------
 // POST /api/assets/:id/return - Return an allocated asset
 // -------------------------------------------------------------
-router.post("/:id/return", requireAuth, async (req, res) => {
+router.post("/:id/return", requireAuth, requireAdminOrManager, async (req, res) => {
   const { id } = req.params;
   const { return_date, remarks, target_status } = req.body;
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { FiHome, FiUsers, FiLayers, FiCheckSquare, FiCalendar, FiChevronLeft, FiBriefcase, FiHardDrive, FiFileText } from "react-icons/fi";
+import { FiHome, FiUsers, FiLayers, FiCheckSquare, FiCalendar, FiChevronLeft, FiBriefcase, FiHardDrive, FiFileText, FiSettings, FiClock } from "react-icons/fi";
 
 export default function Sidebar({
   active = "dashboard",
@@ -8,21 +8,31 @@ export default function Sidebar({
   onToggleCollapse = () => {},
   user
 }) {
+  const role = (user?.role || "").toLowerCase();
   const items = [
     { key: "dashboard", label: "Dashboard", icon: <FiHome /> },
     { key: "employees", label: "Employees", icon: <FiUsers /> },
     { key: "departments", label: "Departments", icon: <FiLayers /> },
     { key: "skills", label: "Skills Master", icon: <FiCheckSquare /> },
     { key: "leaves", label: "Leave System", icon: <FiCalendar /> },
-    { key: "assets", label: "Assets", icon: <FiHardDrive /> },
   ];
 
-  if (user && (user.role === "admin" || user.role === "hr")) {
+  if (role !== "hr") {
+    items.push({ key: "assets", label: "Assets", icon: <FiHardDrive /> });
+  }
+
+  items.push({ key: "attendance", label: "Attendance", icon: <FiClock /> });
+
+  if (user && (role === "admin" || role === "hr")) {
     items.push({ key: "recruitment", label: "Recruitment", icon: <FiBriefcase /> });
   }
 
-  if (user && (user.role === "admin" || user.role === "hr" || user.role === "manager")) {
+  if (user && (role === "admin" || role === "hr" || role === "manager")) {
     items.push({ key: "reports", label: "Reports", icon: <FiFileText /> });
+  }
+
+  if (user && role === "admin") {
+    items.push({ key: "settings", label: "Settings", icon: <FiSettings /> });
   }
 
   return (

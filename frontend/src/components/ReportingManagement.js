@@ -111,6 +111,66 @@ export default function ReportingManagement({ user }) {
     setAssetMaxCost("");
   };
 
+  const handleExportCSV = () => {
+    if (!data || data.length === 0) return;
+
+    let headers = [];
+    let rows = [];
+
+    if (activeTab === "employees") {
+      headers = ["Name", "Email", "Phone", "Department", "Designation", "Salary", "Skills", "Join Date"];
+      rows = data.map((emp) => [
+        `"${(emp.name || "").replace(/"/g, '""')}"`,
+        `"${(emp.email || "").replace(/"/g, '""')}"`,
+        `"${(emp.phone || "").replace(/"/g, '""')}"`,
+        `"${(emp.department_name || "Unassigned").replace(/"/g, '""')}"`,
+        `"${(emp.designation || "").replace(/"/g, '""')}"`,
+        emp.salary ? parseFloat(emp.salary) : 0,
+        `"${(Array.isArray(emp.skills) ? emp.skills.join(", ") : "").replace(/"/g, '""')}"`,
+        `"${(emp.created_at ? emp.created_at.split("T")[0] : "").replace(/"/g, '""')}"`
+      ]);
+    } else if (activeTab === "leaves") {
+      headers = ["Employee Name", "Leave Type", "Start Date", "End Date", "Reason", "Status", "Manager Approver", "HR Approver", "Request Date"];
+      rows = data.map((leave) => [
+        `"${(leave.employee_name || "").replace(/"/g, '""')}"`,
+        `"${(leave.leave_name || "").replace(/"/g, '""')}"`,
+        `"${(leave.start_date ? leave.start_date.split("T")[0] : "").replace(/"/g, '""')}"`,
+        `"${(leave.end_date ? leave.end_date.split("T")[0] : "").replace(/"/g, '""')}"`,
+        `"${(leave.reason || "").replace(/"/g, '""')}"`,
+        `"${(leave.status || "").replace(/"/g, '""')}"`,
+        `"${(leave.manager_name || "Pending").replace(/"/g, '""')}"`,
+        `"${(leave.hr_name || "Pending").replace(/"/g, '""')}"`,
+        `"${(leave.created_at ? leave.created_at.split("T")[0] : "").replace(/"/g, '""')}"`
+      ]);
+    } else if (activeTab === "assets") {
+      headers = ["Asset Code", "Asset Name", "Type", "Purchase Date", "Purchase Cost", "Status", "Current Owner"];
+      rows = data.map((asset) => [
+        `"${(asset.asset_code || "").replace(/"/g, '""')}"`,
+        `"${(asset.asset_name || "").replace(/"/g, '""')}"`,
+        `"${(asset.asset_type || "").replace(/"/g, '""')}"`,
+        `"${(asset.purchase_date ? asset.purchase_date.split("T")[0] : "").replace(/"/g, '""')}"`,
+        asset.purchase_cost ? parseFloat(asset.purchase_cost) : 0,
+        `"${(asset.status || "").replace(/"/g, '""')}"`,
+        `"${(asset.status === "Allocated" ? asset.current_owner : "— Available —").replace(/"/g, '""')}"`
+      ]);
+    }
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((r) => r.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${activeTab}_report_${new Date().toISOString().split("T")[0]}.csv`);
+    link.style.visibility = "hidden";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getStatusChipClass = (status) => {
     if (!status) return "";
     const lower = status.toLowerCase();
@@ -147,13 +207,15 @@ export default function ReportingManagement({ user }) {
         >
           <FiCalendar /> Leave Reports
         </button>
-        <button 
-          className={`auth-tab ${activeTab === "assets" ? "active" : ""}`}
-          onClick={() => { setActiveTab("assets"); setData([]); }}
-          style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "transparent", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "0.9rem" }}
-        >
-          <FiHardDrive /> Asset Reports
-        </button>
+        {(user?.role || "").toLowerCase() !== "hr" && (
+          <button 
+            className={`auth-tab ${activeTab === "assets" ? "active" : ""}`}
+            onClick={() => { setActiveTab("assets"); setData([]); }}
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "transparent", border: "none", cursor: "pointer", fontWeight: "600", fontSize: "0.9rem" }}
+          >
+            <FiHardDrive /> Asset Reports
+          </button>
+        )}
       </div>
 
       {/* Filter Panels */}
@@ -279,9 +341,12 @@ export default function ReportingManagement({ user }) {
           </div>
         )}
 
-        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "12px" }}>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "12px" }}>
           <button className="btn secondary" onClick={handleResetFilters} style={{ padding: "4px 12px", fontSize: "0.8rem", borderColor: "var(--border)" }}>
             Reset Filters
+          </button>
+          <button className="btn" onClick={handleExportCSV} style={{ padding: "4px 12px", fontSize: "0.8rem", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+            📥 Export to CSV
           </button>
         </div>
       </div>

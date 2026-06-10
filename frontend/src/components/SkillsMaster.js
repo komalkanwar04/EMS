@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FiPlus, FiEdit, FiTrash, FiCheck, FiX } from "react-icons/fi";
 
-export default function SkillsMaster({ onRefresh }) {
+export default function SkillsMaster({ user, onRefresh }) {
   const [skills, setSkills] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -79,7 +79,8 @@ export default function SkillsMaster({ onRefresh }) {
       </div>
 
       {/* Add Skill Form */}
-      <form onSubmit={handleAdd} style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
+      {(user?.role || "").toLowerCase() !== "employee" && (
+        <form onSubmit={handleAdd} style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
         <input
           type="text"
           className="input-field"
@@ -92,7 +93,8 @@ export default function SkillsMaster({ onRefresh }) {
         <button className="btn" type="submit">
           <FiPlus /> Add
         </button>
-      </form>
+        </form>
+      )}
 
       {status && (
         <div className={`status-message ${status.ok ? "success" : "error"}`} style={{ marginBottom: "16px" }}>
@@ -152,25 +154,29 @@ export default function SkillsMaster({ onRefresh }) {
                         </button>
                       </div>
                     ) : (
-                      <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
-                        <button
-                          className="action-btn edit"
-                          onClick={() => {
-                            setEditId(skill.id);
-                            setEditName(skill.skill_name);
-                          }}
-                          title="Rename Skill"
-                        >
-                          <FiEdit size={16} />
-                        </button>
-                        <button
-                          className="action-btn delete"
-                          onClick={() => handleDelete(skill.id, skill.skill_name)}
-                          title="Delete Skill"
-                        >
-                          <FiTrash size={16} />
-                        </button>
-                      </div>
+                      ((user?.role || "").toLowerCase() !== "employee" ? (
+                        <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end" }}>
+                          <button
+                            className="action-btn edit"
+                            onClick={() => {
+                              setEditId(skill.id);
+                              setEditName(skill.skill_name);
+                            }}
+                            title="Rename Skill"
+                          >
+                            <FiEdit size={16} />
+                          </button>
+                          <button
+                            className="action-btn delete"
+                            onClick={() => handleDelete(skill.id, skill.skill_name)}
+                            title="Delete Skill"
+                          >
+                            <FiTrash size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>View only</div>
+                      ))
                     )}
                   </td>
                 </tr>

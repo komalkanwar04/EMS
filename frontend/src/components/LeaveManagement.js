@@ -103,12 +103,13 @@ export default function LeaveManagement({ user }) {
   };
 
   const getHRApprovalsList = () => {
-    return applications.filter((app) => app.status === "Pending HR Approval");
+    return applications.filter((app) => app.status === "Pending HR Approval" || app.status === "Pending Manager Approval");
   };
 
-  const showManagerTab = user.role === "manager" || user.role === "hr" || user.role === "admin";
-  const showHRTab = user.role === "hr" || user.role === "admin";
-  const showAllTab = user.role === "hr" || user.role === "admin";
+  const role = (user?.role || "").toLowerCase();
+  const showManagerTab = role === "manager" || role === "hr" || role === "admin";
+  const showHRTab = role === "hr" || role === "admin";
+  const showAllTab = role === "hr" || role === "admin";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>

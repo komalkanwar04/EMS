@@ -11,6 +11,8 @@ import LeaveManagement from "./components/LeaveManagement";
 import RecruitmentManagement from "./components/RecruitmentManagement";
 import AssetManagement from "./components/AssetManagement";
 import ReportingManagement from "./components/ReportingManagement";
+import SmtpSettings from "./components/SmtpSettings";
+import AttendanceManagement from "./components/AttendanceManagement";
 
 export default function EmployeeDashboard({ user, onLogout }) {
   const [view, setView] = useState("dashboard"); // dashboard, employees, departments, skills, create-employee, edit-employee
@@ -99,11 +101,14 @@ export default function EmployeeDashboard({ user, onLogout }) {
             />
 
             <ChartsPanel
+              user={user}
               data={{
                 deptDistribution: stats.deptDistribution,
                 skillsDistribution: stats.skillsDistribution,
                 salaryAnalytics: stats.salaryAnalytics,
-                hiringTrend: stats.hiringTrend
+                hiringTrend: stats.hiringTrend,
+                assetsStatusDistribution: stats.assetsStatusDistribution,
+                assetsAllocationByDept: stats.assetsAllocationByDept
               }}
             />
           </>
@@ -118,12 +123,15 @@ export default function EmployeeDashboard({ user, onLogout }) {
                   Manage employee details, department allocations, and resumes.
                 </p>
               </div>
-              <button className="btn" onClick={() => setView("create-employee")}>
-                Add Employee
-              </button>
+              {(user?.role || "").toLowerCase() !== "employee" && (
+                <button className="btn" onClick={() => setView("create-employee")}> 
+                  Add Employee
+                </button>
+              )}
             </div>
             <EmployeeList
               key={refreshKey}
+              user={user}
               onEdit={handleEditTrigger}
               onRefresh={() => setRefreshKey((k) => k + 1)}
             />
@@ -135,6 +143,7 @@ export default function EmployeeDashboard({ user, onLogout }) {
             <EmployeeForm
               onCreated={handleCreatedOrUpdated}
               onCancel={() => setView("employees")}
+              user={user}
             />
           </div>
         )}
@@ -148,19 +157,20 @@ export default function EmployeeDashboard({ user, onLogout }) {
                 setEditingEmployee(null);
                 setView("employees");
               }}
+              user={user}
             />
           </div>
         )}
 
         {view === "departments" && (
           <div className="panel-card visible">
-            <DepartmentMaster onRefresh={() => setRefreshKey((k) => k + 1)} />
+            <DepartmentMaster user={user} onRefresh={() => setRefreshKey((k) => k + 1)} />
           </div>
         )}
 
         {view === "skills" && (
           <div className="panel-card visible">
-            <SkillsMaster onRefresh={() => setRefreshKey((k) => k + 1)} />
+            <SkillsMaster user={user} onRefresh={() => setRefreshKey((k) => k + 1)} />
           </div>
         )}
 
@@ -176,7 +186,7 @@ export default function EmployeeDashboard({ user, onLogout }) {
           </div>
         )}
 
-        {view === "assets" && (
+        {view === "assets" && (user?.role || "").toLowerCase() !== "hr" && (
           <div className="panel-card visible">
             <AssetManagement user={user} />
           </div>
@@ -185,6 +195,18 @@ export default function EmployeeDashboard({ user, onLogout }) {
         {view === "reports" && (
           <div className="panel-card visible">
             <ReportingManagement user={user} />
+          </div>
+        )}
+
+        {view === "settings" && (
+          <div className="panel-card visible">
+            <SmtpSettings user={user} />
+          </div>
+        )}
+
+        {view === "attendance" && (
+          <div className="panel-card visible">
+            <AttendanceManagement user={user} />
           </div>
         )}
       </div>

@@ -241,6 +241,22 @@ router.post(
       }
       const employeeId = profileRes.rows[0].id;
 
+      // Cross-reference: Prevent leave submission if they already punched in (Present) on any requested dates
+      const overlapAttendance = await client.query(
+        `SELECT punch_date::text FROM attendance 
+         WHERE employee_id = $1 
+           AND punch_date BETWEEN $2 AND $3
+           AND status = 'Present'`,
+        [employeeId, startDate, endDate]
+      );
+
+      if (overlapAttendance.rows.length > 0) {
+        const dates = overlapAttendance.rows.map(r => r.punch_date).join(", ");
+        return res.status(400).json({ 
+          message: `You cannot apply for leave on these dates because you have already registered attendance (punched in) on: ${dates}.` 
+        });
+      }
+
       // Calculate days requested
       const requestedDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
@@ -331,7 +347,8 @@ router.post(
     const { id } = req.params;
     const { comments } = req.body;
 
-    if (req.user.role === "employee") {
+    const role = (req.user.role || "").toLowerCase();
+    if (role === "employee") {
       return res.status(403).json({ message: "Unauthorized to approve leaves" });
     }
 
@@ -346,38 +363,42 @@ router.post(
       }
       const app = appRes.rows[0];
 
-      let nextStatus = app.status;
+      if (app.status === "Approved") {
+        return res.status(400).json({ message: "Application is already approved" });
+      }
+      if (app.status.startsWith("Rejected")) {
+        return res.status(400).json({ message: "Application is already rejected" });
+      }
+
+      let nextStatus = "Approved";
       let updateFields = "";
       const params = [id, req.user.id];
 
-      if (req.user.role === "manager") {
-        if (app.status !== "Pending Manager Approval") {
-          return res.status(400).json({ message: "Application is not pending manager approval" });
-        }
-        nextStatus = "Pending HR Approval";
+      if (role === "manager") {
         updateFields = ", status = $3, manager_id = $2";
         params.push(nextStatus);
-      } else if (req.user.role === "hr" || req.user.role === "admin") {
-        nextStatus = "Approved";
+      } else if (role === "hr" || role === "admin") {
         updateFields = ", status = $3, hr_id = $2";
         params.push(nextStatus);
+      } else {
+        return res.status(403).json({ message: "Unauthorized role for leave approval" });
+      }
 
-        // Deduct leave balance on final approval
-        const start = new Date(app.start_date);
-        const end = new Date(app.end_date);
-        const days = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+      // Deduct leave balance on final approval
+      const start = new Date(app.start_date);
+      const end = new Date(app.end_date);
+      const days = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
 
-        const updateBalanceRes = await client.query(
-          `UPDATE leave_balances 
-           SET available_days = available_days - $1 
-           WHERE employee_id = $2 AND leave_type_id = $3 AND available_days >= $1
-           RETURNING available_days`,
-          [days, app.employee_id, app.leave_type_id]
-        );
+      const updateBalanceRes = await client.query(
+        `UPDATE leave_balances 
+         SET available_days = available_days - $1 
+         WHERE employee_id = $2 AND leave_type_id = $3 AND available_days >= $1
+         RETURNING available_days`,
+        [days, app.employee_id, app.leave_type_id]
+      );
 
-        if (updateBalanceRes.rows.length === 0) {
-          return res.status(400).json({ message: "Insufficient leave balance for final approval" });
-        }
+      if (updateBalanceRes.rows.length === 0) {
+        return res.status(400).json({ message: "Insufficient leave balance for final approval" });
       }
 
       // Update application
@@ -389,7 +410,7 @@ router.post(
       );
 
       // Insert Audit History
-      const actionLabel = req.user.role === "manager" ? "Manager Approved" : "HR Approved";
+      const actionLabel = role === "manager" ? "Manager Approved" : "HR Approved";
       await client.query(
         `INSERT INTO approval_history (leave_id, approved_by, action, remarks)
          VALUES ($1, $2, $3, $4)`,
@@ -450,7 +471,8 @@ router.post(
     const { id } = req.params;
     const { comments } = req.body;
 
-    if (req.user.role === "employee") {
+    const role = (req.user.role || "").toLowerCase();
+    if (role === "employee") {
       return res.status(403).json({ message: "Unauthorized to reject leaves" });
     }
 
@@ -464,18 +486,27 @@ router.post(
       }
       const app = appRes.rows[0];
 
-      let nextStatus = app.status;
+      if (app.status === "Approved") {
+        return res.status(400).json({ message: "Application is already approved" });
+      }
+      if (app.status.startsWith("Rejected")) {
+        return res.status(400).json({ message: "Application is already rejected" });
+      }
+
+      let nextStatus = "";
       let updateFields = "";
       const params = [id, req.user.id];
 
-      if (req.user.role === "manager") {
+      if (role === "manager") {
         nextStatus = "Rejected by Manager";
         updateFields = ", status = $3, manager_id = $2";
         params.push(nextStatus);
-      } else if (req.user.role === "hr" || req.user.role === "admin") {
+      } else if (role === "hr" || role === "admin") {
         nextStatus = "Rejected by HR";
         updateFields = ", status = $3, hr_id = $2";
         params.push(nextStatus);
+      } else {
+        return res.status(403).json({ message: "Unauthorized role for leave rejection" });
       }
 
       // Update application
@@ -487,7 +518,7 @@ router.post(
       );
 
       // Insert Audit History
-      const actionLabel = req.user.role === "manager" ? "Manager Rejected" : "HR Rejected";
+      const actionLabel = role === "manager" ? "Manager Rejected" : "HR Rejected";
       await client.query(
         `INSERT INTO approval_history (leave_id, approved_by, action, remarks)
          VALUES ($1, $2, $3, $4)`,

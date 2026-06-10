@@ -1,8 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 export default function Signup({ onSignup }) {
-  const [form, setForm] = useState({ name: "", email: "", password: "" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState(null);
 
   const handleChange = (e) => {
@@ -11,9 +13,17 @@ export default function Signup({ onSignup }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (form.password !== form.confirmPassword) {
+      setStatus({ ok: false, message: "Passwords do not match" });
+      return;
+    }
     setStatus("loading");
     try {
-      const res = await axios.post("/api/auth/signup", form);
+      const res = await axios.post("/api/auth/signup", {
+        name: form.name,
+        email: form.email,
+        password: form.password
+      });
       setStatus({ ok: true, message: res.data?.message || "Account registered successfully" });
       onSignup?.(res.data.user);
     } catch (err) {
@@ -60,12 +70,49 @@ export default function Signup({ onSignup }) {
 
         <div className="field-group">
           <label htmlFor="signup-password">Secure Password</label>
+          <div style={{ position: "relative" }}>
+            <input
+              id="signup-password"
+              className="input-field"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+              onChange={handleChange}
+              required
+              placeholder="••••••••"
+              style={{ paddingRight: "40px" }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--muted)",
+                display: "flex",
+                alignItems: "center",
+                padding: 0
+              }}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+            </button>
+          </div>
+        </div>
+
+        <div className="field-group">
+          <label htmlFor="signup-confirm-password">Confirm Password</label>
           <input
-            id="signup-password"
+            id="signup-confirm-password"
             className="input-field"
-            name="password"
-            type="password"
-            value={form.password}
+            name="confirmPassword"
+            type={showPassword ? "text" : "password"}
+            value={form.confirmPassword}
             onChange={handleChange}
             required
             placeholder="••••••••"

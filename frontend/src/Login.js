@@ -1,8 +1,10 @@
 import { useState } from "react";
 import axios from "axios";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, onForgotPassword }) {
   const [form, setForm] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [status, setStatus] = useState(null);
 
   const handleChange = (e) => {
@@ -57,17 +59,50 @@ export default function Login({ onLogin }) {
         </div>
 
         <div className="field-group">
-          <label htmlFor="login-password">Password</label>
-          <input
-            id="login-password"
-            className="input-field"
-            name="password"
-            type="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-            placeholder="••••••••"
-          />
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <label htmlFor="login-password">Password</label>
+            <button
+              type="button"
+              onClick={onForgotPassword}
+              className="action-btn view"
+              style={{ padding: 0, fontSize: "0.75rem", cursor: "pointer", background: "none", border: "none", height: "auto", textDecoration: "underline" }}
+            >
+              Forgot Password?
+            </button>
+          </div>
+          <div style={{ position: "relative" }}>
+            <input
+              id="login-password"
+              className="input-field"
+              name="password"
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+              onChange={handleChange}
+              required
+              placeholder="••••••••"
+              style={{ paddingRight: "40px" }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--muted)",
+                display: "flex",
+                alignItems: "center",
+                padding: 0
+              }}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+            </button>
+          </div>
         </div>
 
         <button className="btn" type="submit" disabled={status === "loading"} style={{ marginTop: "8px" }}>

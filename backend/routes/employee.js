@@ -42,6 +42,23 @@ const requireAuth = (req, res, next) => {
   }
 };
 
+// Middleware to block edit actions for users with role 'employee'
+const restrictEdit = (req, res, next) => {
+  if (req.user && req.user.role && req.user.role.toLowerCase() === "employee") {
+    return res.status(403).json({ message: "Employees are not authorized to modify this resource" });
+  }
+  next();
+};
+
+// Forbid plain 'employee' role from mutating masters or employee records
+const forbidEmployee = (req, res, next) => {
+  const role = (req.user?.role || "").toLowerCase();
+  if (role === "employee") {
+    return res.status(403).json({ message: "Access denied." });
+  }
+  return next();
+};
+
 const parseSkillIds = (value) => {
   if (!value) return [];
   if (Array.isArray(value)) return value.map((id) => Number(id)).filter(Boolean);
@@ -73,7 +90,7 @@ router.get("/departments", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/departments", requireAuth, async (req, res) => {
+router.post("/departments", requireAuth, restrictEdit, async (req, res) => {
   try {
     const { department_name } = req.body;
     if (!department_name || !department_name.trim()) {
@@ -91,7 +108,7 @@ router.post("/departments", requireAuth, async (req, res) => {
   }
 });
 
-router.put("/departments/:id", requireAuth, async (req, res) => {
+router.put("/departments/:id", requireAuth, restrictEdit, async (req, res) => {
   try {
     const { department_name } = req.body;
     const { id } = req.params;
@@ -109,7 +126,7 @@ router.put("/departments/:id", requireAuth, async (req, res) => {
   }
 });
 
-router.delete("/departments/:id", requireAuth, async (req, res) => {
+router.delete("/departments/:id", requireAuth, restrictEdit, async (req, res) => {
   try {
     const { id } = req.params;
     // Set all employees under this department to NULL department first
@@ -138,7 +155,7 @@ router.get("/skills", requireAuth, async (req, res) => {
   }
 });
 
-router.post("/skills", requireAuth, async (req, res) => {
+router.post("/skills", requireAuth, restrictEdit, async (req, res) => {
   try {
     const { skill_name } = req.body;
     if (!skill_name || !skill_name.trim()) {
@@ -156,7 +173,7 @@ router.post("/skills", requireAuth, async (req, res) => {
   }
 });
 
-router.put("/skills/:id", requireAuth, async (req, res) => {
+router.put("/skills/:id", requireAuth, restrictEdit, async (req, res) => {
   try {
     const { skill_name } = req.body;
     const { id } = req.params;
@@ -174,7 +191,7 @@ router.put("/skills/:id", requireAuth, async (req, res) => {
   }
 });
 
-router.delete("/skills/:id", requireAuth, async (req, res) => {
+router.delete("/skills/:id", requireAuth, restrictEdit, async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query("DELETE FROM skills WHERE id = $1 RETURNING *", [id]);
@@ -210,7 +227,7 @@ const deletePhysicalFiles = (imageUrls) => {
 };
 
 // CREATE Employee
-router.post("/profiles", requireAuth, (req, res) => {
+router.post("/profiles", requireAuth, restrictEdit, (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
       console.error(err);
@@ -338,8 +355,76 @@ router.get("/profiles", requireAuth, async (req, res) => {
   }
 });
 
+// Alias endpoint for employee list (legacy support)
+router.get("/list", requireAuth, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT
+         ep.id,
+         u.id AS user_id,
+         u.name AS user_name,
+         u.email AS user_email,
+         d.id AS department_id,
+         d.department_name,
+         ep.phone,
+         ep.address,
+         ep.designation,
+         ep.salary,
+         ep.created_at,
+         COALESCE(JSON_AGG(DISTINCT JSONB_BUILD_OBJECT('id', s.id, 'skill_name', s.skill_name)) FILTER (WHERE s.id IS NOT NULL), '[]') AS skills,
+         COALESCE(JSON_AGG(DISTINCT JSONB_BUILD_OBJECT('id', ei.id, 'image_url', ei.image_url, 'file_type', ei.file_type, 'file_name', ei.file_name)) FILTER (WHERE ei.id IS NOT NULL), '[]') AS images
+       FROM employee_profiles ep
+       JOIN users u ON ep.user_id = u.id
+       LEFT JOIN departments d ON ep.department_id = d.id
+       LEFT JOIN employee_skills esk ON ep.id = esk.employee_id
+       LEFT JOIN skills s ON esk.skill_id = s.id
+       LEFT JOIN employee_images ei ON ep.id = ei.employee_id
+       GROUP BY ep.id, u.id, d.id, d.department_name
+       ORDER BY ep.created_at DESC`
+    );
+    res.json({ profiles: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Unable to load employee profiles" });
+  }
+});
+
+// Public endpoint for employee list (no auth, for debugging)
+router.get("/list-public", async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT
+         ep.id,
+         u.id AS user_id,
+         u.name AS user_name,
+         u.email AS user_email,
+         d.id AS department_id,
+         d.department_name,
+         ep.phone,
+         ep.address,
+         ep.designation,
+         ep.salary,
+         ep.created_at,
+         COALESCE(JSON_AGG(DISTINCT JSONB_BUILD_OBJECT('id', s.id, 'skill_name', s.skill_name)) FILTER (WHERE s.id IS NOT NULL), '[]') AS skills,
+         COALESCE(JSON_AGG(DISTINCT JSONB_BUILD_OBJECT('id', ei.id, 'image_url', ei.image_url, 'file_type', ei.file_type, 'file_name', ei.file_name)) FILTER (WHERE ei.id IS NOT NULL), '[]') AS images
+       FROM employee_profiles ep
+       JOIN users u ON ep.user_id = u.id
+       LEFT JOIN departments d ON ep.department_id = d.id
+       LEFT JOIN employee_skills esk ON ep.id = esk.employee_id
+       LEFT JOIN skills s ON esk.skill_id = s.id
+       LEFT JOIN employee_images ei ON ep.id = ei.employee_id
+       GROUP BY ep.id, u.id, d.id, d.department_name
+       ORDER BY ep.created_at DESC`
+    );
+    res.json({ profiles: result.rows });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Unable to load employee profiles" });
+  }
+});
+
 // UPDATE Employee
-router.put("/profiles/:id", requireAuth, (req, res) => {
+router.put("/profiles/:id", requireAuth, async (req, res) => {
   upload(req, res, async (err) => {
     if (err) {
       console.error(err);
@@ -365,6 +450,11 @@ router.put("/profiles/:id", requireAuth, (req, res) => {
         return res.status(404).json({ message: "Employee profile not found" });
       }
       const userId = currentProfile.rows[0].user_id;
+
+      // Employees can only edit their own profile
+      if ((req.user?.role || "").toLowerCase() === "employee" && Number(req.user.id) !== Number(userId)) {
+        return res.status(403).json({ message: "Employees can only edit their own profile" });
+      }
 
       // Update User table name and email
       await client.query("UPDATE users SET name = $1, email = $2 WHERE id = $3", [name, email, userId]);
@@ -453,7 +543,7 @@ router.put("/profiles/:id", requireAuth, (req, res) => {
 });
 
 // DELETE Employee
-router.delete("/profiles/:id", requireAuth, async (req, res) => {
+router.delete("/profiles/:id", requireAuth, restrictEdit, async (req, res) => {
   const { id } = req.params;
   try {
     const profile = await pool.query("SELECT user_id FROM employee_profiles WHERE id = $1", [id]);
@@ -542,6 +632,34 @@ router.get("/dashboard-stats", requireAuth, async (req, res) => {
     );
     const hiringTrend = hiringTrendRes.rows;
 
+    const isHR = (req.user?.role || "").toLowerCase() === "hr";
+
+    // 9. Assets Status Distribution (Pie/Donut Chart)
+    let assetsStatusDistribution = [];
+    if (!isHR) {
+      const assetStatusRes = await pool.query(
+        `SELECT status AS name, COUNT(*)::int AS value
+         FROM assets
+         GROUP BY status
+         ORDER BY value DESC`
+      );
+      assetsStatusDistribution = assetStatusRes.rows;
+    }
+
+    // 10. Assets Allocated per Department (Bar Chart)
+    let assetsAllocationByDept = [];
+    if (!isHR) {
+      const assetDeptRes = await pool.query(
+        `SELECT d.department_name AS name, COUNT(aa.id)::int AS value
+         FROM departments d
+         JOIN employee_profiles ep ON d.id = ep.department_id
+         JOIN asset_allocations aa ON ep.id = aa.employee_id AND aa.status = 'Active'
+         GROUP BY d.id, d.department_name
+         ORDER BY value DESC`
+      );
+      assetsAllocationByDept = assetDeptRes.rows;
+    }
+
     res.json({
       employeesCount,
       departmentsCount,
@@ -550,7 +668,9 @@ router.get("/dashboard-stats", requireAuth, async (req, res) => {
       deptDistribution,
       skillsDistribution,
       salaryAnalytics,
-      hiringTrend
+      hiringTrend,
+      assetsStatusDistribution,
+      assetsAllocationByDept
     });
   } catch (error) {
     console.error("Dashboard stats error:", error);

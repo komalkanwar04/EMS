@@ -42,7 +42,8 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-export default function ChartsPanel({ data = {} }) {
+export default function ChartsPanel({ data = {}, user }) {
+  const role = (user?.role || "").toLowerCase();
   // Department Distribution (Pie)
   const deptData = data.deptDistribution?.length
     ? data.deptDistribution
@@ -83,9 +84,30 @@ export default function ChartsPanel({ data = {} }) {
         { name: "Q4", hires: 2 }
       ];
 
+  // Asset Status Distribution
+  const assetStatusData = data.assetsStatusDistribution?.length
+    ? data.assetsStatusDistribution
+    : [
+        { name: "Available", value: 5 },
+        { name: "Allocated", value: 12 },
+        { name: "Under Repair", value: 2 },
+        { name: "Scrapped", value: 1 }
+      ];
+
+  // Asset Allocations by Department
+  const assetDeptData = data.assetsAllocationByDept?.length
+    ? data.assetsAllocationByDept
+    : [
+        { name: "Engineering", value: 8 },
+        { name: "Marketing", value: 2 },
+        { name: "Finance", value: 1 },
+        { name: "HR", value: 1 }
+      ];
+
   return (
-    <div className="charts-grid">
-      {/* 1. Department Size Distribution */}
+    <div>
+      <div className="charts-grid" style={{ marginBottom: "32px" }}>
+        {/* 1. Department Size Distribution */}
       <div className="chart-card">
         <h4>Department Distribution</h4>
         {deptData.length === 0 || (deptData.length === 1 && deptData[0].value === 0) ? (
@@ -182,5 +204,70 @@ export default function ChartsPanel({ data = {} }) {
         )}
       </div>
     </div>
+
+    {role !== "hr" && (
+      <>
+        <div style={{ marginBottom: "20px", marginTop: "40px" }}>
+          <h3 style={{ margin: "0 0 8px 0", fontSize: "1.2rem", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+            📦 Asset Allocation Reports
+          </h3>
+          <p style={{ color: "var(--muted)", fontSize: "0.85rem", margin: 0 }}>
+            Overview of physical inventory assets allocation and current operational statuses.
+          </p>
+        </div>
+
+        <div className="charts-grid">
+          {/* 5. Asset Status Distribution */}
+          <div className="chart-card">
+            <h4>Asset Status Distribution</h4>
+            {assetStatusData.length === 0 ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 180, color: "var(--muted)", fontSize: "0.85rem" }}>
+                No asset status data available.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={180}>
+                <PieChart>
+                  <Pie
+                    data={assetStatusData}
+                    dataKey="value"
+                    nameKey="name"
+                    innerRadius={50}
+                    outerRadius={80}
+                    paddingAngle={3}
+                    animationDuration={800}
+                  >
+                    {assetStatusData.map((_, idx) => (
+                      <Cell key={idx} fill={COLORS[(idx + 2) % COLORS.length]} stroke="var(--surface-strong)" strokeWidth={2} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<CustomTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+
+          {/* 6. Asset Allocations by Department */}
+          <div className="chart-card">
+            <h4>Asset Allocations by Department</h4>
+            {assetDeptData.length === 0 ? (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 180, color: "var(--muted)", fontSize: "0.85rem" }}>
+                No department allocation data available.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={180}>
+                <BarChart data={assetDeptData} barSize={24}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                  <XAxis dataKey="name" stroke="var(--muted)" fontSize={11} tickLine={false} />
+                  <YAxis stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: "var(--accent-soft)" }} />
+                  <Bar dataKey="value" name="Active Allocations" fill="#10b981" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      </>
+    )}
+  </div>
   );
 }

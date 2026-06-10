@@ -5,7 +5,11 @@ CREATE TABLE IF NOT EXISTS users (
   name VARCHAR(100),
   email VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role VARCHAR(20) DEFAULT 'user'
+  role VARCHAR(20) DEFAULT 'user',
+  reset_otp VARCHAR(10),
+  reset_otp_expiry TIMESTAMP,
+  reset_token VARCHAR(255),
+  reset_token_expiry TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS departments (

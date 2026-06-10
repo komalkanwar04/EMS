@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { FiSave, FiXCircle, FiPaperclip, FiImage, FiFileText } from "react-icons/fi";
 
-export default function EmployeeForm({ employee = null, onCreated, onCancel }) {
+export default function EmployeeForm({ employee = null, onCreated, onCancel, user }) {
   const isEditMode = !!employee;
   const [departments, setDepartments] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -75,6 +75,14 @@ export default function EmployeeForm({ employee = null, onCreated, onCancel }) {
     }
     setDeleteImageIds([]);
   }, [employee]);
+
+  if ((user?.role || "").toLowerCase() === "employee") {
+    return (
+      <div className="status-message" style={{ maxWidth: "600px", margin: "40px auto" }}>
+        Access denied. Employees have view-only access and cannot create or edit employee records.
+      </div>
+    );
+  }
 
   const handleChange = (e) => {
     const { name, value } = e.target;

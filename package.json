@@ -1,0 +1,8 @@
+{
+  "dependencies": {
+    "@faker-js/faker": "^10.4.0",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.4.2",
+    "faker": "^6.6.6"
+  }
+}

@@ -132,6 +132,10 @@ router.get("/leaves", requireAuth, requirePrivileged, async (req, res) => {
 // GET /api/reports/assets - Inventory allocations list
 // -------------------------------------------------------------
 router.get("/assets", requireAuth, requirePrivileged, async (req, res) => {
+  const role = (req.user?.role || "").toLowerCase();
+  if (role === "hr") {
+    return res.status(403).json({ message: "Access denied. Asset reports are disabled for HR role." });
+  }
   try {
     const { asset_type, status, min_cost, max_cost } = req.query;
 

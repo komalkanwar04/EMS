@@ -52,7 +52,9 @@ export default function AssetManagement({ user }) {
   // Employee's own profile state (if they are a regular employee)
   const [myProfileId, setMyProfileId] = useState(null);
 
-  const isAdminOrHrOrManager = user && (user.role === "admin" || user.role === "hr" || user.role === "manager");
+  const role = (user?.role || "").toLowerCase();
+  const isAdminOrHrOrManager = role === "admin" || role === "hr" || role === "manager";
+  const canModifyAssets = role === "admin" || role === "manager";
 
   // Load assets
   const fetchAssets = async () => {
@@ -286,7 +288,7 @@ export default function AssetManagement({ user }) {
               : "Review physical equipment and software licenses allocated to you."}
           </p>
         </div>
-        {isAdminOrHrOrManager && (
+        {canModifyAssets && (
           <button className="btn" onClick={() => { resetAssetForm(); setShowAddModal(true); }}>
             <FiPlus /> Catalog Asset
           </button>
@@ -382,7 +384,7 @@ export default function AssetManagement({ user }) {
                 <th>Purchase Info</th>
                 <th>Status</th>
                 <th>Current Owner</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
+                {canModifyAssets && <th style={{ textAlign: "right" }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -427,65 +429,67 @@ export default function AssetManagement({ user }) {
                       <span style={{ color: "var(--muted)", fontStyle: "italic", fontSize: "0.8rem" }}>— Available —</span>
                     )}
                   </td>
-                  <td style={{ textAlign: "right" }}>
-                    <div style={{ display: "inline-flex", gap: "6px", justifyContent: "flex-end" }}>
-                      
-                      {/* Allocate / Return actions */}
-                      {isAdminOrHrOrManager && asset.status === "Available" && (
-                        <button 
-                          className="btn" 
-                          onClick={() => { setSelectedAsset(asset); setShowAllocateModal(true); }}
-                          style={{ padding: "4px 10px", fontSize: "0.75rem" }}
-                        >
-                          Allocate
-                        </button>
-                      )}
-                      
-                      {isAdminOrHrOrManager && asset.status === "Allocated" && (
-                        <button 
-                          className="btn secondary" 
-                          onClick={() => { setSelectedAsset(asset); setShowReturnModal(true); }}
-                          style={{ padding: "4px 10px", fontSize: "0.75rem", borderColor: "var(--border)" }}
-                        >
-                          Return Check-In
-                        </button>
-                      )}
+                  {canModifyAssets && (
+                    <td style={{ textAlign: "right" }}>
+                      <div style={{ display: "inline-flex", gap: "6px", justifyContent: "flex-end" }}>
+                        
+                        {/* Allocate / Return actions */}
+                        {canModifyAssets && asset.status === "Available" && (
+                          <button 
+                            className="btn" 
+                            onClick={() => { setSelectedAsset(asset); setShowAllocateModal(true); }}
+                            style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+                          >
+                            Allocate
+                          </button>
+                        )}
+                        
+                        {canModifyAssets && asset.status === "Allocated" && (
+                          <button 
+                            className="btn secondary" 
+                            onClick={() => { setSelectedAsset(asset); setShowReturnModal(true); }}
+                            style={{ padding: "4px 10px", fontSize: "0.75rem", borderColor: "var(--border)" }}
+                          >
+                            Return Check-In
+                          </button>
+                        )}
 
-                      {/* Audit History Timeline button */}
-                      <button
-                        className="action-btn view"
-                        onClick={() => viewHistoryLog(asset)}
-                        title="View Audit Logs"
-                        style={{ padding: "6px" }}
-                      >
-                        <FiClock size={16} />
-                      </button>
-
-                      {/* Edit Details button */}
-                      {isAdminOrHrOrManager && (
+                        {/* Audit History Timeline button */}
                         <button
-                          className="action-btn edit"
-                          onClick={() => openEditModal(asset)}
-                          title="Edit Asset Details"
+                          className="action-btn view"
+                          onClick={() => viewHistoryLog(asset)}
+                          title="View Audit Logs"
                           style={{ padding: "6px" }}
                         >
-                          <FiEdit size={16} />
+                          <FiClock size={16} />
                         </button>
-                      )}
 
-                      {/* Delete button */}
-                      {isAdminOrHrOrManager && (
-                        <button
-                          className="action-btn delete"
-                          onClick={() => handleDeleteAsset(asset)}
-                          title="Scrap/Delete Asset"
-                          style={{ padding: "6px" }}
-                        >
-                          <FiTrash size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
+                        {/* Edit Details button */}
+                        {canModifyAssets && (
+                          <button
+                            className="action-btn edit"
+                            onClick={() => openEditModal(asset)}
+                            title="Edit Asset Details"
+                            style={{ padding: "6px" }}
+                          >
+                            <FiEdit size={16} />
+                          </button>
+                        )}
+
+                        {/* Delete button */}
+                        {canModifyAssets && (
+                          <button
+                            className="action-btn delete"
+                            onClick={() => handleDeleteAsset(asset)}
+                            title="Scrap/Delete Asset"
+                            style={{ padding: "6px" }}
+                          >
+                            <FiTrash size={16} />
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>

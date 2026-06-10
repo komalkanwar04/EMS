@@ -14,6 +14,7 @@ const leaveRoutes = require("./routes/leave");
 const recruitmentRoutes = require("./routes/recruitment");
 const assetRoutes = require("./routes/asset");
 const reportRoutes = require("./routes/report");
+const attendanceRoutes = require("./routes/attendance");
 
 const app = express();
 
@@ -61,8 +62,9 @@ app.use("/api/leaves", leaveRoutes);
 app.use("/api/recruitment", recruitmentRoutes);
 app.use("/api/assets", assetRoutes);
 app.use("/api/reports", reportRoutes);
+app.use("/api/attendance", attendanceRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 app.listen(PORT, () => {
   console.log(`Server running on ${PORT}`);
 });

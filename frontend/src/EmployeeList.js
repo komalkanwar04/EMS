@@ -4,7 +4,7 @@ import { FiSearch, FiEdit2, FiTrash2, FiEye, FiDownload, FiFileText } from "reac
 
 const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5001";
 
-export default function EmployeeList({ onEdit, onRefresh }) {
+export default function EmployeeList({ user, onEdit, onRefresh }) {
   const [profiles, setProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -206,20 +206,26 @@ export default function EmployeeList({ onEdit, onRefresh }) {
                         >
                           <FiEye size={16} />
                         </button>
-                        <button
-                          className="action-btn edit"
-                          onClick={() => onEdit(profile)}
-                          title="Edit Profile"
-                        >
-                          <FiEdit2 size={15} />
-                        </button>
-                        <button
-                          className="action-btn delete"
-                          onClick={() => setConfirmTarget(profile)}
-                          title="Delete Employee"
-                        >
-                          <FiTrash2 size={16} />
-                        </button>
+                        {(user?.role || "").toLowerCase() !== "employee" ? (
+                          <>
+                            <button
+                              className="action-btn edit"
+                              onClick={() => onEdit(profile)}
+                              title="Edit Profile"
+                            >
+                              <FiEdit2 size={15} />
+                            </button>
+                            <button
+                              className="action-btn delete"
+                              onClick={() => setConfirmTarget(profile)}
+                              title="Delete Employee"
+                            >
+                              <FiTrash2 size={16} />
+                            </button>
+                          </>
+                        ) : (
+                          <div style={{ color: "var(--muted)", fontSize: "0.9rem" }}>View only</div>
+                        )}
                       </div>
                     </td>
                   </tr>

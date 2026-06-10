@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Signup from "./Signup";
 import Login from "./Login";
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
 import EmployeeDashboard from "./EmployeeDashboard";
 import Navbar from "./components/Navbar";
 import LandingPage from "./components/LandingPage";
@@ -19,6 +21,21 @@ export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [authTab, setAuthTab] = useState("login");
   const [showAuth, setShowAuth] = useState(false);
+  const [resetTokenData, setResetTokenData] = useState({ token: "", email: "" });
+
+  // Detect URL search parameters for link-based password reset
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const action = params.get("action");
+    const token = params.get("token");
+    const email = params.get("email");
+
+    if (action === "reset-password" && token && email) {
+      setResetTokenData({ token, email });
+      setAuthTab("reset-link");
+      setShowAuth(true);
+    }
+  }, []);
 
   // Toggle Dark Mode Theme
   useEffect(() => {
@@ -95,24 +112,43 @@ export default function App() {
             >
               ← Back to Portal
             </button>
-            <div className="auth-tabs">
-              <button
-                className={`auth-tab ${authTab === "login" ? "active" : ""}`}
-                onClick={() => setAuthTab("login")}
-              >
-                Sign In
-              </button>
-              <button
-                className={`auth-tab ${authTab === "signup" ? "active" : ""}`}
-                onClick={() => setAuthTab("signup")}
-              >
-                Sign Up
-              </button>
-            </div>
-            {authTab === "login" ? (
-              <Login onLogin={(u) => { setUser(u); setShowAuth(false); }} />
-            ) : (
+            {authTab !== "forgot" && authTab !== "reset-link" && (
+              <div className="auth-tabs">
+                <button
+                  className={`auth-tab ${authTab === "login" ? "active" : ""}`}
+                  onClick={() => setAuthTab("login")}
+                >
+                  Sign In
+                </button>
+                <button
+                  className={`auth-tab ${authTab === "signup" ? "active" : ""}`}
+                  onClick={() => setAuthTab("signup")}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
+            {authTab === "login" && (
+              <Login 
+                onLogin={(u) => { setUser(u); setShowAuth(false); }} 
+                onForgotPassword={() => setAuthTab("forgot")}
+              />
+            )}
+            {authTab === "signup" && (
               <Signup onSignup={(u) => { setUser(u); setShowAuth(false); }} />
+            )}
+            {authTab === "forgot" && (
+              <ForgotPassword onBackToLogin={() => setAuthTab("login")} />
+            )}
+            {authTab === "reset-link" && (
+              <ResetPassword 
+                email={resetTokenData.email} 
+                token={resetTokenData.token} 
+                onBackToLogin={() => {
+                  setAuthTab("login");
+                  window.history.replaceState({}, document.title, window.location.pathname);
+                }} 
+              />
             )}
           </div>
         </div>
