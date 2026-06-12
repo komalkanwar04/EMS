@@ -35,16 +35,25 @@ const runMigration = async () => {
       VALUES (1, '', 587, false, '', '', '', false)
       ON CONFLICT DO NOTHING;
 
-      CREATE TABLE IF NOT EXISTS attendance (
+      CREATE TABLE IF NOT EXISTS payroll (
         id SERIAL PRIMARY KEY,
         employee_id INT REFERENCES employee_profiles(id) ON DELETE CASCADE,
-        punch_date DATE NOT NULL,
-        punch_in TIMESTAMP,
-        punch_out TIMESTAMP,
-        status VARCHAR(50) DEFAULT 'Present',
-        notes TEXT,
-        UNIQUE(employee_id, punch_date)
+        month DATE NOT NULL,
+        present_days INT DEFAULT 0,
+        absent_days INT DEFAULT 0,
+        gross_salary NUMERIC(12,2) NOT NULL,
+        tds NUMERIC(12,2) DEFAULT 0,
+        esic NUMERIC(12,2) DEFAULT 0,
+        pf NUMERIC(12,2) DEFAULT 0,
+        total_deductions NUMERIC(12,2) DEFAULT 0,
+        net_salary NUMERIC(12,2) NOT NULL,
+        CONSTRAINT uniq_payroll UNIQUE(employee_id, month)
       );
+
+      ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS city VARCHAR(100);
+      ALTER TABLE employee_profiles ADD COLUMN IF NOT EXISTS working_mode VARCHAR(20);
+      ALTER TABLE payroll ADD COLUMN IF NOT EXISTS present_days INT DEFAULT 0;
+      ALTER TABLE payroll ADD COLUMN IF NOT EXISTS absent_days INT DEFAULT 0;
     `);
     console.log("[Database] Schema recovery columns, SMTP & Attendance tables verified successfully");
   } catch (error) {

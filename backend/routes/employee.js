@@ -601,18 +601,7 @@ router.get("/dashboard-stats", requireAuth, async (req, res) => {
     );
     const deptDistribution = deptDistRes.rows;
 
-    // 6. Skills Frequencies (Bar Chart)
-    const skillsDistRes = await pool.query(
-      `SELECT s.skill_name AS name, COUNT(esk.id)::int AS value
-       FROM skills s
-       LEFT JOIN employee_skills esk ON s.id = esk.skill_id
-       GROUP BY s.id, s.skill_name
-       ORDER BY value DESC
-       LIMIT 10`
-    );
-    const skillsDistribution = skillsDistRes.rows;
-
-    // 7. Salary Analytics per Department (Bar Chart)
+    // 6. Salary Analytics per Department (Bar Chart)
     const salaryAnalRes = await pool.query(
       `SELECT d.department_name AS name, ROUND(AVG(ep.salary), 2)::float AS avg
        FROM departments d
@@ -622,7 +611,7 @@ router.get("/dashboard-stats", requireAuth, async (req, res) => {
     );
     const salaryAnalytics = salaryAnalRes.rows;
 
-    // 8. Monthly Hiring Trend (Line Chart)
+    // 7. Monthly Hiring Trend (Line Chart)
     const hiringTrendRes = await pool.query(
       `SELECT TO_CHAR(ep.created_at, 'YYYY-MM') AS name, COUNT(ep.id)::int AS hires
        FROM employee_profiles ep
@@ -632,33 +621,38 @@ router.get("/dashboard-stats", requireAuth, async (req, res) => {
     );
     const hiringTrend = hiringTrendRes.rows;
 
-    const isHR = (req.user?.role || "").toLowerCase() === "hr";
+    // 8. Working Mode Distribution (Donut Chart)
+    const workingModeRes = await pool.query(
+      `SELECT COALESCE(NULLIF(ep.working_mode, ''), 'Unspecified') AS name, COUNT(*)::int AS value
+       FROM employee_profiles ep
+       GROUP BY ep.working_mode
+       ORDER BY value DESC`
+    );
+    const workingModeDistribution = workingModeRes.rows;
 
-    // 9. Assets Status Distribution (Pie/Donut Chart)
-    let assetsStatusDistribution = [];
-    if (!isHR) {
-      const assetStatusRes = await pool.query(
-        `SELECT status AS name, COUNT(*)::int AS value
-         FROM assets
-         GROUP BY status
-         ORDER BY value DESC`
-      );
-      assetsStatusDistribution = assetStatusRes.rows;
-    }
+    // 9. Location-wise headcounts (Bar Chart)
+    const locationRes = await pool.query(
+      `SELECT COALESCE(NULLIF(ep.city, ''), 'Unspecified') AS name, COUNT(*)::int AS value
+       FROM employee_profiles ep
+       GROUP BY ep.city
+       ORDER BY value DESC
+       LIMIT 10`
+    );
+    const locationDistribution = locationRes.rows;
 
-    // 10. Assets Allocated per Department (Bar Chart)
-    let assetsAllocationByDept = [];
-    if (!isHR) {
-      const assetDeptRes = await pool.query(
-        `SELECT d.department_name AS name, COUNT(aa.id)::int AS value
-         FROM departments d
-         JOIN employee_profiles ep ON d.id = ep.department_id
-         JOIN asset_allocations aa ON ep.id = aa.employee_id AND aa.status = 'Active'
-         GROUP BY d.id, d.department_name
-         ORDER BY value DESC`
-      );
-      assetsAllocationByDept = assetDeptRes.rows;
-    }
+    // 10. Payroll Cost Analysis (Stacked Bar Chart - Gross, Deductions, Net)
+    const payrollCostRes = await pool.query(
+      `SELECT d.department_name AS name,
+              ROUND(COALESCE(AVG(p.gross_salary), AVG(ep.salary), 0), 2)::float AS gross,
+              ROUND(COALESCE(AVG(p.total_deductions), AVG(ep.salary) * 0.2375, 0), 2)::float AS deductions,
+              ROUND(COALESCE(AVG(p.net_salary), AVG(ep.salary) * 0.7625, 0), 2)::float AS net
+       FROM departments d
+       JOIN employee_profiles ep ON d.id = ep.department_id
+       LEFT JOIN payroll p ON ep.id = p.employee_id
+       GROUP BY d.id, d.department_name
+       ORDER BY gross DESC`
+    );
+    const payrollCostAnalysis = payrollCostRes.rows;
 
     res.json({
       employeesCount,
@@ -666,11 +660,11 @@ router.get("/dashboard-stats", requireAuth, async (req, res) => {
       skillsCount,
       avgSalary,
       deptDistribution,
-      skillsDistribution,
       salaryAnalytics,
       hiringTrend,
-      assetsStatusDistribution,
-      assetsAllocationByDept
+      workingModeDistribution,
+      locationDistribution,
+      payrollCostAnalysis
     });
   } catch (error) {
     console.error("Dashboard stats error:", error);

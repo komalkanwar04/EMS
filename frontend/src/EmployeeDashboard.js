@@ -102,14 +102,7 @@ export default function EmployeeDashboard({ user, onLogout }) {
 
             <ChartsPanel
               user={user}
-              data={{
-                deptDistribution: stats.deptDistribution,
-                skillsDistribution: stats.skillsDistribution,
-                salaryAnalytics: stats.salaryAnalytics,
-                hiringTrend: stats.hiringTrend,
-                assetsStatusDistribution: stats.assetsStatusDistribution,
-                assetsAllocationByDept: stats.assetsAllocationByDept
-              }}
+              data={stats}
             />
           </>
         )}

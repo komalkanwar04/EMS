@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS employee_profiles (
   address TEXT,
   designation VARCHAR(100),
   salary NUMERIC(10,2),
+  city VARCHAR(100),
+  working_mode VARCHAR(20),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -142,4 +144,34 @@ CREATE TABLE IF NOT EXISTS asset_history (
   remarks TEXT,
   created_by INT REFERENCES users(id) ON DELETE SET NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+/* Add city and working_mode columns to employee_profiles */
+ALTER TABLE employee_profiles
+ADD COLUMN IF NOT EXISTS city VARCHAR(100),
+ADD COLUMN IF NOT EXISTS working_mode VARCHAR(20);
+
+/* Attendance table */
+CREATE TABLE IF NOT EXISTS attendance (
+  id SERIAL PRIMARY KEY,
+  employee_id INT REFERENCES employee_profiles(id) ON DELETE CASCADE,
+  attend_date DATE NOT NULL,
+  status VARCHAR(10) NOT NULL,   -- 'Present' or 'Absent'
+  CONSTRAINT uniq_attendance UNIQUE(employee_id, attend_date)
+);
+
+/* Payroll table */
+CREATE TABLE IF NOT EXISTS payroll (
+  id SERIAL PRIMARY KEY,
+  employee_id INT REFERENCES employee_profiles(id) ON DELETE CASCADE,
+  month DATE NOT NULL,               -- first day of month
+  present_days INT DEFAULT 0,
+  absent_days INT DEFAULT 0,
+  gross_salary NUMERIC(12,2) NOT NULL,
+  tds NUMERIC(12,2) DEFAULT 0,
+  esic NUMERIC(12,2) DEFAULT 0,
+  pf NUMERIC(12,2) DEFAULT 0,
+  total_deductions NUMERIC(12,2) DEFAULT 0,
+  net_salary NUMERIC(12,2) NOT NULL,
+  CONSTRAINT uniq_payroll UNIQUE(employee_id, month)
 );

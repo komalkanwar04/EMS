@@ -5,6 +5,7 @@ import { FaEye, FaEyeSlash } from "react-icons/fa";
 export default function Signup({ onSignup }) {
   const [form, setForm] = useState({ name: "", email: "", password: "", confirmPassword: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [status, setStatus] = useState(null);
 
   const handleChange = (e) => {
@@ -107,16 +108,39 @@ export default function Signup({ onSignup }) {
 
         <div className="field-group">
           <label htmlFor="signup-confirm-password">Confirm Password</label>
-          <input
-            id="signup-confirm-password"
-            className="input-field"
-            name="confirmPassword"
-            type={showPassword ? "text" : "password"}
-            value={form.confirmPassword}
-            onChange={handleChange}
-            required
-            placeholder="••••••••"
-          />
+          <div style={{ position: "relative" }}>
+            <input
+              id="signup-confirm-password"
+              className="input-field"
+              name="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              value={form.confirmPassword}
+              onChange={handleChange}
+              required
+              placeholder="••••••••"
+              style={{ paddingRight: "40px" }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              style={{
+                position: "absolute",
+                right: "12px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                color: "var(--muted)",
+                display: "flex",
+                alignItems: "center",
+                padding: 0
+              }}
+              aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+            >
+              {showConfirmPassword ? <FaEyeSlash size={16} /> : <FaEye size={16} />}
+            </button>
+          </div>
         </div>
 
         <button className="btn" type="submit" disabled={status === "loading"} style={{ marginTop: "8px" }}>

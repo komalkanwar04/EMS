@@ -73,6 +73,74 @@ export default function App() {
     fetchUser();
   }, []);
 
+  // Inactivity Auto-Logout (10 seconds)
+  useEffect(() => {
+    if (!user) return;
+
+    let timeoutId;
+    let lastX = null;
+    let lastY = null;
+    let lastActiveTime = Date.now();
+    const TIMEOUT_IN_MS = 10000; // 10 seconds
+
+    const handleInactivity = () => {
+      axios.post("/api/auth/logout", {}).catch(() => {});
+      setUser(null);
+      setMessage("Logged out due to inactivity");
+      setTimeout(() => setMessage(null), 5000);
+    };
+
+    const resetTimer = (e) => {
+      if (e && e.type === "mousemove") {
+        const threshold = 15; // ignore minor cursor jitter
+        if (lastX !== null && lastY !== null) {
+          const deltaX = Math.abs(e.clientX - lastX);
+          const deltaY = Math.abs(e.clientY - lastY);
+          if (deltaX < threshold && deltaY < threshold) {
+            return; // skip timer reset for tiny pointer movements
+          }
+        }
+        lastX = e.clientX;
+        lastY = e.clientY;
+      }
+
+      lastActiveTime = Date.now();
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleInactivity, TIMEOUT_IN_MS);
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        const timeElapsed = Date.now() - lastActiveTime;
+        if (timeElapsed >= TIMEOUT_IN_MS) {
+          handleInactivity();
+        } else {
+          resetTimer();
+        }
+      }
+    };
+
+    const activityEvents = ["mousedown", "mousemove", "keypress", "scroll", "touchstart"];
+
+    // Initialize timer
+    resetTimer();
+
+    // Attach listeners
+    activityEvents.forEach((event) => {
+      window.addEventListener(event, resetTimer);
+    });
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Cleanup
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      activityEvents.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [user]);
+
   const handleLogout = async () => {
     try {
       await axios.post("/api/auth/logout", {});

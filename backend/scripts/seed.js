@@ -131,7 +131,9 @@ async function runSeed() {
         recruitment_applications,
         assets,
         asset_allocations,
-        asset_history
+        asset_history,
+        attendance,
+        payroll
       RESTART IDENTITY CASCADE
     `);
 
@@ -186,30 +188,30 @@ async function runSeed() {
     console.log("Seeding employee profiles...");
     const profiles = [
       // 10 Seeded Employees
-      { userId: 1, deptId: 1, phone: "9876543210", address: "Indore", designation: "Director", salary: 150000 },
-      { userId: 2, deptId: 1, phone: "9876543211", address: "Indore", designation: "Project Manager", salary: 85000 },
-      { userId: 3, deptId: 3, phone: "9876543212", address: "Indore", designation: "HR Manager", salary: 70000 },
-      { userId: 4, deptId: 1, phone: "9876543213", address: "Indore", designation: "React Developer", salary: 45000 },
-      { userId: 5, deptId: 1, phone: "9876543214", address: "Indore", designation: "Node Developer", salary: 50000 },
-      { userId: 6, deptId: 2, phone: "9876543215", address: "Indore", designation: "QA Engineer", salary: 40000 },
-      { userId: 7, deptId: 5, phone: "9876543216", address: "Indore", designation: "Marketing Executive", salary: 35000 },
-      { userId: 8, deptId: 6, phone: "9876543217", address: "Indore", designation: "Sales Executive", salary: 38000 },
-      { userId: 9, deptId: 8, phone: "9876543218", address: "Indore", designation: "Support Engineer", salary: 32000 },
-      { userId: 10, deptId: 4, phone: "9876543219", address: "Indore", designation: "Accountant", salary: 42000 },
+      { userId: 1, deptId: 1, phone: "9876543210", address: "Indore", designation: "Director", salary: 150000, city: "Indore", working_mode: "Onsite" },
+      { userId: 2, deptId: 1, phone: "9876543211", address: "Indore", designation: "Project Manager", salary: 85000, city: "Indore", working_mode: "Hybrid" },
+      { userId: 3, deptId: 3, phone: "9876543212", address: "Indore", designation: "HR Manager", salary: 70000, city: "Pune", working_mode: "Onsite" },
+      { userId: 4, deptId: 1, phone: "9876543213", address: "Indore", designation: "React Developer", salary: 45000, city: "Bhopal", working_mode: "Remote" },
+      { userId: 5, deptId: 1, phone: "9876543214", address: "Indore", designation: "Node Developer", salary: 50000, city: "Indore", working_mode: "Remote" },
+      { userId: 6, deptId: 2, phone: "9876543215", address: "Indore", designation: "QA Engineer", salary: 40000, city: "Pune", working_mode: "Onsite" },
+      { userId: 7, deptId: 5, phone: "9876543216", address: "Indore", designation: "Marketing Executive", salary: 35000, city: "Mumbai", working_mode: "Hybrid" },
+      { userId: 8, deptId: 6, phone: "9876543217", address: "Indore", designation: "Sales Executive", salary: 38000, city: "Delhi", working_mode: "Onsite" },
+      { userId: 9, deptId: 8, phone: "9876543218", address: "Indore", designation: "Support Engineer", salary: 32000, city: "Bhopal", working_mode: "Remote" },
+      { userId: 10, deptId: 4, phone: "9876543219", address: "Indore", designation: "Accountant", salary: 42000, city: "Indore", working_mode: "Onsite" },
       
       // 6 Original Employees
-      { userId: 11, deptId: 1, phone: "9876543200", address: "Indore", designation: "HR Director", salary: 120000 },
-      { userId: 12, deptId: 1, phone: "9876543201", address: "Indore", designation: "Frontend Engineer", salary: 65000 },
-      { userId: 13, deptId: 3, phone: "9876543202", address: "Indore", designation: "HR Manager", salary: 75000 },
-      { userId: 14, deptId: 4, phone: "9876543203", address: "Indore", designation: "Accountant", salary: 58000 },
-      { userId: 15, deptId: 5, phone: "9876543204", address: "Indore", designation: "Marketing Lead", salary: 60000 },
-      { userId: 16, deptId: 1, phone: "9876543205", address: "Indore", designation: "Fullstack Engineer", salary: 80000 }
+      { userId: 11, deptId: 1, phone: "9876543200", address: "Indore", designation: "HR Director", salary: 120000, city: "Indore", working_mode: "Onsite" },
+      { userId: 12, deptId: 1, phone: "9876543201", address: "Indore", designation: "Frontend Engineer", salary: 65000, city: "Bhopal", working_mode: "Remote" },
+      { userId: 13, deptId: 3, phone: "9876543202", address: "Indore", designation: "HR Manager", salary: 75000, city: "Pune", working_mode: "Hybrid" },
+      { userId: 14, deptId: 4, phone: "9876543203", address: "Indore", designation: "Accountant", salary: 58000, city: "Mumbai", working_mode: "Onsite" },
+      { userId: 15, deptId: 5, phone: "9876543204", address: "Indore", designation: "Marketing Lead", salary: 60000, city: "Delhi", working_mode: "Remote" },
+      { userId: 16, deptId: 1, phone: "9876543205", address: "Indore", designation: "Fullstack Engineer", salary: 80000, city: "Indore", working_mode: "Hybrid" }
     ];
     for (const p of profiles) {
       await client.query(
-        `INSERT INTO employee_profiles(user_id, department_id, phone, address, designation, salary)
-         VALUES($1, $2, $3, $4, $5, $6)`,
-        [p.userId, p.deptId, p.phone, p.address, p.designation, p.salary]
+        `INSERT INTO employee_profiles(user_id, department_id, phone, address, designation, salary, city, working_mode)
+         VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [p.userId, p.deptId, p.phone, p.address, p.designation, p.salary, p.city, p.working_mode]
       );
     }
 
@@ -536,6 +538,59 @@ async function runSeed() {
           `INSERT INTO asset_history (asset_id, action, remarks, created_by)
            VALUES ($1, $2, $3, $4)`,
           [a.id, "Created", "Asset added to inventory during seeding", 1]
+        );
+      }
+    }
+
+    // 15. Seed Attendance Logs for June 2026 and May 2026
+    console.log("Seeding mock attendance records for May and June 2026...");
+    const empProfilesRes = await client.query("SELECT id FROM employee_profiles");
+    const empIds = empProfilesRes.rows.map(r => r.id);
+    
+    // Generate dates for May 2026 (days 1 to 31) and June 2026 (days 1 to 10)
+    for (const empId of empIds) {
+      // May 2026
+      for (let day = 1; day <= 31; day++) {
+        const dayStr = day < 10 ? `0${day}` : `${day}`;
+        const dateStr = `2026-05-${dayStr}`;
+        const dateObj = new Date(dateStr);
+        const dayOfWeek = dateObj.getDay();
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) continue; // Skip weekends
+        
+        const rand = Math.random();
+        const status = rand > 0.15 ? "Present" : "Absent";
+        
+        const punchIn = status === "Present" ? `${dateStr} 09:05:00` : null;
+        const punchOut = status === "Present" ? `${dateStr} 18:10:00` : null;
+        
+        await client.query(
+          `INSERT INTO attendance (employee_id, punch_date, punch_in, punch_out, status, notes)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT DO NOTHING`,
+          [empId, dateStr, punchIn, punchOut, status, status === "Present" ? "Regular login" : "Absent"]
+        );
+      }
+
+      // June 2026
+      for (let day = 1; day <= 10; day++) {
+        const dateStr = `2026-06-0${day}`;
+        const dateObj = new Date(dateStr);
+        const dayOfWeek = dateObj.getDay();
+        
+        if (dayOfWeek === 0 || dayOfWeek === 6) continue; // Skip weekends
+        
+        const rand = Math.random();
+        const status = rand > 0.12 ? "Present" : "Absent";
+        
+        const punchIn = status === "Present" ? `${dateStr} 09:12:00` : null;
+        const punchOut = status === "Present" ? `${dateStr} 18:05:00` : null;
+        
+        await client.query(
+          `INSERT INTO attendance (employee_id, punch_date, punch_in, punch_out, status, notes)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           ON CONFLICT DO NOTHING`,
+          [empId, dateStr, punchIn, punchOut, status, status === "Present" ? "Regular login" : "Absent"]
         );
       }
     }
