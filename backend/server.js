@@ -45,8 +45,22 @@ app.use(helmet({
 }));
 
 const corsOptions = {
-  origin:
-    process.env.FRONTEND_URL || ["http://localhost:3000", "http://localhost:3001"],
+  origin: (origin, callback) => {
+    const allowedOrigins = [
+      "https://ems-isoftzone.vercel.app",
+      "https://isoftzone-02-06-26.vercel.app",
+      "http://localhost:3000",
+      "http://localhost:3001"
+    ];
+    if (process.env.FRONTEND_URL) {
+      allowedOrigins.push(process.env.FRONTEND_URL);
+    }
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked for origin: ${origin}`));
+    }
+  },
   credentials: true,
 };
 
