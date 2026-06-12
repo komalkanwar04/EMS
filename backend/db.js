@@ -6,7 +6,8 @@ const pool = new Pool({
   database: process.env.DB_DATABASE,
   password: process.env.DB_PASSWORD,
   port: Number(process.env.DB_PORT) || 5432,
-  max: 100 // increased for large seed operations
+  max: 100, // increased for large seed operations
+  ssl: process.env.DB_HOST && process.env.DB_HOST !== "localhost" ? { rejectUnauthorized: false } : false
 });
 
 // Run simple database check/migration
