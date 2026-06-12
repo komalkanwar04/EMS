@@ -155,9 +155,12 @@ ADD COLUMN IF NOT EXISTS working_mode VARCHAR(20);
 CREATE TABLE IF NOT EXISTS attendance (
   id SERIAL PRIMARY KEY,
   employee_id INT REFERENCES employee_profiles(id) ON DELETE CASCADE,
-  attend_date DATE NOT NULL,
+  punch_date DATE NOT NULL,
+  punch_in TIMESTAMP,
+  punch_out TIMESTAMP,
   status VARCHAR(10) NOT NULL,   -- 'Present' or 'Absent'
-  CONSTRAINT uniq_attendance UNIQUE(employee_id, attend_date)
+  notes TEXT,
+  CONSTRAINT uniq_attendance UNIQUE(employee_id, punch_date)
 );
 
 /* Payroll table */
