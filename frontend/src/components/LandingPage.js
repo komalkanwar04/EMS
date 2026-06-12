@@ -92,10 +92,7 @@ export default function LandingPage({ onSignInClick, onSignUpClick }) {
             
             <div style={{ display: "flex", gap: "14px", marginTop: "10px" }}>
               <button className="btn" onClick={onSignInClick} style={{ display: "flex", alignItems: "center", gap: "8px", padding: "12px 24px", fontWeight: "600" }}>
-                Admin & Staff Sign In <FiArrowRight />
-              </button>
-              <button className="btn secondary" onClick={onSignUpClick} style={{ padding: "12px 24px", fontWeight: "600" }}>
-                Create Workspace
+                Sign In / Sign Up <FiArrowRight />
               </button>
             </div>
           </div>
@@ -203,7 +200,7 @@ export default function LandingPage({ onSignInClick, onSignUpClick }) {
             boxShadow: "var(--shadow)",
             borderRadius: "20px"
           }}>
-            <h3 style={{ fontSize: "1.4rem", marginBottom: "6px", textAlign: "center", fontWeight: "700" }}>Join i-SOFTZONE Technologies</h3>
+            <h3 style={{ fontSize: "1.4rem", marginBottom: "6px", textAlign: "center", fontWeight: "700" }}>Apply Now</h3>
             <p style={{ color: "var(--muted)", fontSize: "0.85rem", marginBottom: "26px", textAlign: "center" }}>
               Ready to grow with us? Apply for our Job openings or Internship programs across domains.
             </p>

@@ -20,6 +20,7 @@
   --success: #10b981;
   --success-bg: rgba(16, 185, 129, 0.08);
   --shadow: 0 8px 32px 0 rgba(99, 102, 241, 0.04);
+  --chart-text: #000000;
 }
 
 .dark-theme {
@@ -42,6 +43,7 @@
   --success: #34d399;
   --success-bg: rgba(52, 211, 153, 0.15);
   --shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25);
+  --chart-text: #ffffff;
 }
 
 * {
@@ -578,8 +580,19 @@ main {
   padding: 6px 10px;
   outline: none;
   background: var(--surface-strong);
+  color: var(--text);
   font-size: 0.85rem;
   transition: border-color 0.15s;
+}
+
+select option {
+  background-color: #ffffff;
+  color: #1e1b4b;
+}
+
+.dark-theme select option {
+  background-color: #1e293b;
+  color: #f3e8ff;
 }
 
 .input-field:focus, .select-field:focus, .textarea-field:focus {

@@ -11,4 +11,12 @@ module.exports = function (app) {
       // logLevel: 'debug',
     })
   );
+  // Proxy any request starting with /uploads to the backend server
+  app.use(
+    '/uploads',
+    createProxyMiddleware({
+      target: 'http://localhost:5001',
+      changeOrigin: true,
+    })
+  );
 };

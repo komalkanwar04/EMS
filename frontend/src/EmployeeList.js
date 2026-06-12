@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { FiSearch, FiEdit2, FiTrash2, FiEye, FiDownload, FiFileText } from "react-icons/fi";
 
-const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5001";
+const apiBase = process.env.REACT_APP_API_URL || "";
 
 export default function EmployeeList({ user, onEdit, onRefresh }) {
   const [profiles, setProfiles] = useState([]);

@@ -8,7 +8,7 @@ import EmployeeDashboard from "./EmployeeDashboard";
 import Navbar from "./components/Navbar";
 import LandingPage from "./components/LandingPage";
 
-const apiBase = process.env.REACT_APP_API_URL || "http://localhost:5001";
+const apiBase = process.env.REACT_APP_API_URL || "";
 
 // Global axios defaults
 axios.defaults.baseURL = apiBase;
