@@ -201,7 +201,7 @@ export default function LeaveManagement({ user }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {applications.filter((app) => app.employee_email?.toLowerCase() === user.email?.toLowerCase()).length === 0 ? (
+                    {applications.filter((app) => app.employee_email?.toLowerCase() === user?.email?.toLowerCase()).length === 0 ? (
                       <tr>
                         <td colSpan="6" style={{ textAlign: "center", color: "var(--muted)" }}>
                           You have not submitted any leave requests yet.
@@ -209,7 +209,7 @@ export default function LeaveManagement({ user }) {
                       </tr>
                     ) : (
                       applications
-                        .filter((app) => app.employee_email?.toLowerCase() === user.email?.toLowerCase())
+                        .filter((app) => app.employee_email?.toLowerCase() === user?.email?.toLowerCase())
                         .map((app) => {
                           const statusClass =
                             app.status === "Approved"

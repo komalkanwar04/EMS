@@ -69,6 +69,9 @@ app.use(express.json());
 app.use(cookieParser());
 
 // 3. Mount Routes
+app.get("/", (req, res) => {
+  res.json({ status: "healthy", message: "PeopleSync EMS API is running." });
+});
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 app.use("/api/auth", authRoutes);

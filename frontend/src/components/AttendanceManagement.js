@@ -42,13 +42,14 @@ export default function AttendanceManagement({ user }) {
   const [deviceBiometricsSupported, setDeviceBiometricsSupported] = useState(false);
 
   useEffect(() => {
+    if (!user) return;
     fetchLogs();
     checkBiometricStatus();
     if (isPrivileged) {
       fetchEmployees();
       fetchDepartments();
     }
-  }, []);
+  }, [user]);
 
   const checkBiometricStatus = async () => {
     const supported = !!window.PublicKeyCredential;
@@ -109,8 +110,8 @@ export default function AttendanceManagement({ user }) {
         },
         user: {
           id: userId,
-          name: user.email,
-          displayName: user.name,
+          name: user?.email || "",
+          displayName: user?.name || "",
         },
         pubKeyCredParams: [
           { alg: -7, type: "public-key" },
@@ -409,7 +410,7 @@ export default function AttendanceManagement({ user }) {
         if (!existing) {
           merged.push({
             id: `leave-${dateStr}-${lv.employee_name || "me"}`,
-            employee_name: lv.employee_name || user.name,
+            employee_name: lv.employee_name || user?.name || "",
             punch_date: dateStr,
             punch_in: null,
             punch_out: null,

@@ -87,6 +87,7 @@ export default function AssetManagement({ user }) {
 
   // Load current employee profile (to filter assets for normal employees)
   const fetchMyProfile = async () => {
+    if (!user?.id) return;
     try {
       // Find my profile from all profiles matching user email or id
       const res = await axios.get("/api/employees/profiles");
@@ -101,13 +102,14 @@ export default function AssetManagement({ user }) {
   };
 
   useEffect(() => {
+    if (!user) return;
     fetchAssets();
     if (isAdminOrHrOrManager) {
       fetchEmployees();
     } else {
       fetchMyProfile();
     }
-  }, [searchTerm, typeFilter, statusFilter]);
+  }, [searchTerm, typeFilter, statusFilter, user]);
 
   // Asset Creation
   const handleAddAsset = async (e) => {
